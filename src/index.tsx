@@ -14,11 +14,11 @@ import BoardCreator2 from './BoardCreator2';
 const router = createBrowserRouter([
   {
     path: "/BoardCreator",
-    element: <App />,
+    element: <BoardCreator2 />,
   },
   {
-    path: "/BoardCreator/V2",
-    element: <BoardCreator2 />
+    path: "/BoardCreator/Old",
+    element: <App />
   }
 ]);
 
