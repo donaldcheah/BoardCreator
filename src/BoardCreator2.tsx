@@ -1,5 +1,8 @@
 import { CSSProperties, useCallback, useState } from "react"
 
+type TileMap = { [key: number]: Tile[] }
+type OutputType = { board: { position: { xIndex: number, yIndex: number }, form: number[][] }, tileGroups: { form: number[][] }[] }
+
 interface Tile {
     index: number
     x: number
@@ -58,8 +61,8 @@ export default function BoardCreator2() {
     const [yBoardSize, setYBoardSize] = useState(20)
     const [currentTileGroupIndex, setCurrentTileGroupIndex] = useState(0)
 
-    //both selected yellow and grey tiles goes here
-    const [selectedTiles, setSelectedTiles] = useState<Tile[]>([])
+    const [selectedYellowTiles, setSelectedYellowTiles] = useState<Tile[]>([])
+    const [selectedGreyTiles, setSelectedGreyTiles] = useState<Tile[]>([])
 
     const [tileType, setTileType] = useState<TILE_TYPE>(TILE_TYPE.GREY)
 
@@ -68,85 +71,85 @@ export default function BoardCreator2() {
     const onTileSizeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setTileSize(Number(e.target.value))
     }, [])
+
+    /* onXChange and onYChange are for the board size X,Y */
     const onXChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setXBoardSize(Number(e.target.value))
     }, [])
     const onYChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setYBoardSize(Number(e.target.value))
     }, [])
+
     const onFileNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setFileName(e.target.value)
     }, [])
 
+    // Change currently operating on GREY/YELLOW tile type
     const onTileTypeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
         var value = e.target.selectedOptions[0].value
         setTileType(TILE_TYPE[value as keyof typeof TILE_TYPE])
     }, [])
 
+    // changes the current tile group you are working on
     const prevTileGroupIndex = useCallback(() => {
         if (currentTileGroupIndex > 0)
             setCurrentTileGroupIndex(currentTileGroupIndex - 1)
     }, [currentTileGroupIndex])
-
     const nextTileGroupIndex = useCallback(() => {
         setCurrentTileGroupIndex(currentTileGroupIndex + 1)
     }, [currentTileGroupIndex])
 
-    const findTileAt = useCallback((x: number, y: number) => {
-        let tile = selectedTiles.find((t) => {
+    const findTileIn = useCallback((list: Tile[], x: number, y: number) => {
+        return list.find((t) => {
             return t.x === x && t.y === y
         })
-
-        return tile
-    }, [selectedTiles])
+    }, [])
 
     const handleClickWhenGrey = useCallback((x: number, y: number) => {
         const tile = {
             index: -1,
             x, y
         }
-        const foundTile = findTileAt(x, y)
-
-
+        const foundTile = findTileIn(selectedGreyTiles, x, y)
         if (!foundTile) {
             //not found tile, should be unoccupied
-            setSelectedTiles([...selectedTiles, tile])
+            setSelectedGreyTiles([...selectedGreyTiles, tile])
         } else if (foundTile.index === -1) {
             //is an existing grey tile, should deselect it
-            setSelectedTiles([...selectedTiles.filter((t) => {
+            setSelectedGreyTiles([...selectedGreyTiles.filter((t) => {
                 return t !== foundTile
             })])
         } else {
             //is a yellow tile or other types, should change to grey tile
             foundTile.index = -1
-            setSelectedTiles([...selectedTiles])
+            setSelectedGreyTiles([...selectedGreyTiles])
         }
 
-    }, [selectedTiles, setSelectedTiles, findTileAt])
+    }, [selectedGreyTiles, setSelectedGreyTiles, findTileIn])
 
     const handleClickWhenYellow = useCallback((x: number, y: number) => {
         const tile = {
             index: currentTileGroupIndex,
             x, y
         }
-        const foundTile = findTileAt(x, y)
+        const foundTile = findTileIn(selectedYellowTiles, x, y)
 
         if (!foundTile) {
             //tile not found on location x,y
             //add to the list
-            setSelectedTiles([...selectedTiles, tile])
+            setSelectedYellowTiles([...selectedYellowTiles, tile])
         } else if (foundTile.index === currentTileGroupIndex) {
             //should deselect it, remove from list
-            const filteredList = selectedTiles.filter((t) => {
+            const filteredList = selectedYellowTiles.filter((t) => {
                 return t !== foundTile
             })
-            setSelectedTiles([...filteredList])
+            setSelectedYellowTiles([...filteredList])
         } else {
             //should change the index number on it
             foundTile.index = currentTileGroupIndex
-            setSelectedTiles([...selectedTiles])
+            setSelectedYellowTiles([...selectedYellowTiles])
         }
-    }, [currentTileGroupIndex, selectedTiles, setSelectedTiles, findTileAt])
+    }, [currentTileGroupIndex, selectedYellowTiles, setSelectedYellowTiles, findTileIn])
 
     const onClickBoard = useCallback((x: number, y: number) => {
         switch (tileType) {
@@ -159,13 +162,24 @@ export default function BoardCreator2() {
             default:
                 throw new Error(`Unhandled TileType : ${tileType}`)
         }
-
     }, [tileType, handleClickWhenGrey, handleClickWhenYellow])
 
+    /* Takes the GREY and YELLOW tiles and export them to a .json file */
     const exportFile2 = useCallback(() => {
-        type TileMap = { [key: number]: Tile[] }
+
         let tileMap: TileMap = {}
-        tileMap = selectedTiles.reduce<TileMap>((acc, tile) => {
+        tileMap = selectedGreyTiles.reduce<TileMap>((acc, tile) => {
+            const tileIndex = tile.index
+            let arr = acc[tileIndex]
+            if (!arr) {
+                arr = [tile]
+                acc[tileIndex] = arr
+            } else {
+                arr.push(tile)
+            }
+            return acc
+        }, tileMap)
+        tileMap = selectedYellowTiles.reduce<TileMap>((acc, tile) => {
             const tileIndex = tile.index
             let arr = acc[tileIndex]
             if (!arr) {
@@ -230,7 +244,6 @@ export default function BoardCreator2() {
             }
             return { form: form }
         })
-        type OutputType = { board: { position: { xIndex: number, yIndex: number }, form: number[][] }, tileGroups: { form: number[][] }[] }
         let outputObject: OutputType = {
             board: {
                 position: {
@@ -254,14 +267,24 @@ export default function BoardCreator2() {
 
         const jsonString = JSON.stringify(outputObject, null, 2)
         downloadFile(`${fileName}.json`, jsonString, 'application/json')
-    }, [fileName, selectedTiles])
+    }, [fileName, selectedYellowTiles, selectedGreyTiles])
 
     const renderBoard = useCallback(() => {
         const renderColumns = (rowIndex: number) => {
             const views = []
             for (let x = 0; x < xBoardSize; x++) {
 
-                const targetTile = findTileAt(x, rowIndex)
+                let targetTile: Tile | undefined
+
+                //to show the grey tiles only when is selecting tile type grey
+                if (tileType === TILE_TYPE.GREY) {
+                    targetTile = findTileIn(selectedGreyTiles, x, rowIndex)
+                } else {
+                    //to show yellow on top of grey tiles when is selecting tile type yellow
+                    targetTile = findTileIn(selectedYellowTiles, x, rowIndex)
+                    if (!targetTile)
+                        targetTile = findTileIn(selectedGreyTiles, x, rowIndex)
+                }
 
                 let targetStyle = Object.assign({}, BoardButtonStyle, { width: `${tileSize}px`, height: `${tileSize}px` } as CSSProperties)
 
@@ -303,7 +326,7 @@ export default function BoardCreator2() {
             views.push(v)
         }
         return views
-    }, [xBoardSize, yBoardSize, currentTileGroupIndex, onClickBoard, tileSize, findTileAt])
+    }, [xBoardSize, yBoardSize, currentTileGroupIndex, onClickBoard, tileSize, findTileIn, selectedGreyTiles, selectedYellowTiles, tileType])
 
     const renderTileTypeOptions = useCallback(() => {
         const options = []
