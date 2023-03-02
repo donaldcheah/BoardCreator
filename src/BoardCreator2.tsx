@@ -1,7 +1,7 @@
 import { CSSProperties, useCallback, useEffect, useState } from "react"
 import { Tile, downloadFile } from './common'
 import { saveData } from './data/SaveData'
-
+import Package from '../package.json'
 type TileMap = { [key: number]: Tile[] }
 type OutputType = { board: { position: { xIndex: number, yIndex: number }, form: number[][] }, tileGroups: { form: number[][] }[] }
 
@@ -483,6 +483,14 @@ export default function BoardCreator2() {
                 <button style={OptionButton} onClick={importProjectFile}>Import Project File</button>
                 <button style={OptionButton} onClick={clearProject}>Clear Project</button>
             </div>
+            <p style={{
+                position: 'absolute',
+                bottom: '8px',
+                right: '8px',
+                opacity: '0.11',
+                margin: '0px',
+                userSelect: 'none'
+            }}>V{Package.version}</p>
         </div>
     );
 }
