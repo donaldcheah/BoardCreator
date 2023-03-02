@@ -1,13 +1,11 @@
-import { CSSProperties, useCallback, useState } from "react"
+import { CSSProperties, useCallback, useEffect, useState } from "react"
+import { Tile, downloadFile } from './common'
+import { saveData } from './data/SaveData'
 
 type TileMap = { [key: number]: Tile[] }
 type OutputType = { board: { position: { xIndex: number, yIndex: number }, form: number[][] }, tileGroups: { form: number[][] }[] }
 
-interface Tile {
-    index: number
-    x: number
-    y: number
-}
+
 
 const TileSizeInputStyle: CSSProperties = {
     width: '50px'
@@ -40,48 +38,114 @@ const FileNameInputStyle: CSSProperties = {
 const ExportButtonStyle: CSSProperties = {
     marginLeft: '8px'
 }
-
-function downloadFile(fileName: string, fileString: string, fileType: string) {
-    var a = document.createElement("a");
-    var file = new Blob([fileString], { type: fileType });
-    a.href = URL.createObjectURL(file);
-    a.download = fileName;
-    a.click();
+const OptionButton: CSSProperties = {
+    marginBottom: '8px'
 }
+const OptionListStyle: CSSProperties = {
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    display: 'flex',
+    flexDirection: 'column'
+}
+
+
 
 enum TILE_TYPE {
     GREY = 1,
     YELLOW = 2
 }
 
+const DEFAULT = {
+    tileSize: 24,
+    xBoardSize: 30,
+    yBoardSize: 20,
+    currentTileGroupIndex: 0,
+    selectedYellowTiles: [],
+    selectedGreyTiles: [],
+    tileType: TILE_TYPE.GREY,
+    fileName: "Level0"
+}
+
 export default function BoardCreator2() {
 
-    const [tileSize, setTileSize] = useState(24)
-    const [xBoardSize, setXBoardSize] = useState(30)
-    const [yBoardSize, setYBoardSize] = useState(20)
-    const [currentTileGroupIndex, setCurrentTileGroupIndex] = useState(0)
+    const [tileSize, setTileSize] = useState(DEFAULT.tileSize)
+    const [xBoardSize, setXBoardSize] = useState(DEFAULT.xBoardSize)
+    const [yBoardSize, setYBoardSize] = useState(DEFAULT.yBoardSize)
+    const [currentTileGroupIndex, setCurrentTileGroupIndex] = useState(DEFAULT.currentTileGroupIndex)
 
-    const [selectedYellowTiles, setSelectedYellowTiles] = useState<Tile[]>([])
-    const [selectedGreyTiles, setSelectedGreyTiles] = useState<Tile[]>([])
+    const [selectedYellowTiles, setSelectedYellowTiles] = useState<Tile[]>(DEFAULT.selectedYellowTiles)
+    const [selectedGreyTiles, setSelectedGreyTiles] = useState<Tile[]>(DEFAULT.selectedGreyTiles)
 
-    const [tileType, setTileType] = useState<TILE_TYPE>(TILE_TYPE.GREY)
+    const [tileType, setTileType] = useState<TILE_TYPE>(DEFAULT.tileType)
 
-    const [fileName, setFileName] = useState("Level0")
+    const [fileName, setFileName] = useState(DEFAULT.fileName)
+
+    useEffect(() => {
+        const boardData = saveData.loadBoard()
+        if (boardData) {
+            setXBoardSize(boardData.width)
+            setYBoardSize(boardData.height)
+            setTileSize(boardData.tileSize)
+        } else {
+            saveData.saveBoard({
+                width: DEFAULT.xBoardSize,
+                height: DEFAULT.yBoardSize,
+                tileSize: DEFAULT.tileSize
+            })
+        }
+
+        const saveFileName = saveData.loadFileName()
+        if (saveFileName)
+            setFileName(saveFileName)
+        else
+            saveData.saveFileName(DEFAULT.fileName)
+
+        const yellowTiles = saveData.loadYellowTiles()
+        if (yellowTiles)
+            setSelectedYellowTiles([...yellowTiles])
+        else
+            saveData.saveYellowTiles(DEFAULT.selectedYellowTiles)
+
+        const greyTiles = saveData.loadGreyTiles()
+        if (greyTiles)
+            setSelectedGreyTiles([...greyTiles])
+        else
+            saveData.saveGreyTiles(DEFAULT.selectedGreyTiles)
+
+        console.log('load data')
+    }, [])
 
     const onTileSizeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setTileSize(Number(e.target.value))
-    }, [])
+        saveData.saveBoard({
+            width: xBoardSize,
+            height: yBoardSize,
+            tileSize: Number(e.target.value)
+        })
+    }, [xBoardSize, yBoardSize])
 
     /* onXChange and onYChange are for the board size X,Y */
     const onXChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setXBoardSize(Number(e.target.value))
-    }, [])
+        saveData.saveBoard({
+            width: Number(e.target.value),
+            height: yBoardSize,
+            tileSize: tileSize
+        })
+    }, [yBoardSize, tileSize])
     const onYChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setYBoardSize(Number(e.target.value))
-    }, [])
+        saveData.saveBoard({
+            width: xBoardSize,
+            height: Number(e.target.value),
+            tileSize: tileSize
+        })
+    }, [xBoardSize, tileSize])
 
     const onFileNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setFileName(e.target.value)
+        saveData.saveFileName(e.target.value)
     }, [])
 
     // Change currently operating on GREY/YELLOW tile type
@@ -113,16 +177,22 @@ export default function BoardCreator2() {
         const foundTile = findTileIn(selectedGreyTiles, x, y)
         if (!foundTile) {
             //not found tile, should be unoccupied
-            setSelectedGreyTiles([...selectedGreyTiles, tile])
+            const arr = [...selectedGreyTiles, tile]
+            setSelectedGreyTiles(arr)
+            saveData.saveGreyTiles(arr)
         } else if (foundTile.index === -1) {
             //is an existing grey tile, should deselect it
-            setSelectedGreyTiles([...selectedGreyTiles.filter((t) => {
+            const arr = [...selectedGreyTiles.filter((t) => {
                 return t !== foundTile
-            })])
+            })]
+            setSelectedGreyTiles(arr)
+            saveData.saveGreyTiles(arr)
         } else {
             //is a yellow tile or other types, should change to grey tile
             foundTile.index = -1
-            setSelectedGreyTiles([...selectedGreyTiles])
+            const arr = [...selectedGreyTiles]
+            setSelectedGreyTiles(arr)
+            saveData.saveGreyTiles(arr)
         }
 
     }, [selectedGreyTiles, setSelectedGreyTiles, findTileIn])
@@ -137,17 +207,23 @@ export default function BoardCreator2() {
         if (!foundTile) {
             //tile not found on location x,y
             //add to the list
-            setSelectedYellowTiles([...selectedYellowTiles, tile])
+            const arr = [...selectedYellowTiles, tile]
+            setSelectedYellowTiles(arr)
+            saveData.saveYellowTiles(arr)
         } else if (foundTile.index === currentTileGroupIndex) {
             //should deselect it, remove from list
             const filteredList = selectedYellowTiles.filter((t) => {
                 return t !== foundTile
             })
-            setSelectedYellowTiles([...filteredList])
+            const arr = [...filteredList]
+            setSelectedYellowTiles(arr)
+            saveData.saveYellowTiles(arr)
         } else {
             //should change the index number on it
             foundTile.index = currentTileGroupIndex
-            setSelectedYellowTiles([...selectedYellowTiles])
+            const arr = [...selectedYellowTiles]
+            setSelectedYellowTiles(arr)
+            saveData.saveYellowTiles(arr)
         }
     }, [currentTileGroupIndex, selectedYellowTiles, setSelectedYellowTiles, findTileIn])
 
@@ -348,6 +424,37 @@ export default function BoardCreator2() {
         return null
     }, [tileType, currentTileGroupIndex, nextTileGroupIndex, prevTileGroupIndex])
 
+    const exportProjectFile = useCallback(() => {
+        saveData.exportProjectFile()
+    }, [])
+    const importProjectFile = useCallback(() => {
+        saveData.importProjectFile()
+    }, [])
+    const clearProject = useCallback(() => {
+        if (window.confirm("This will clear saved data!\nYou should probably EXPORT PROJECT FILE first.\nConfirm clear project?")) {
+            saveData.clearSave()
+            const { xBoardSize, yBoardSize, tileSize, fileName, selectedYellowTiles, selectedGreyTiles, currentTileGroupIndex, tileType } = DEFAULT
+            //replaces deleted save with initial state save
+            saveData.saveBoard({
+                width: xBoardSize,
+                height: yBoardSize,
+                tileSize: tileSize
+            })
+            saveData.saveFileName(fileName)
+            saveData.saveYellowTiles(selectedYellowTiles)
+            saveData.saveGreyTiles(selectedGreyTiles)
+
+            //set all default values
+            setTileSize(tileSize)
+            setXBoardSize(xBoardSize)
+            setYBoardSize(DEFAULT.yBoardSize)
+            setCurrentTileGroupIndex(currentTileGroupIndex)
+            setSelectedYellowTiles(selectedYellowTiles)
+            setSelectedGreyTiles(selectedGreyTiles)
+            setTileType(tileType)
+            setFileName(fileName)
+        }
+    }, [])
     return (
         <div>
             <div id='selections'>
@@ -370,6 +477,11 @@ export default function BoardCreator2() {
             </div>
             <div id='board'>
                 {renderBoard()}
+            </div>
+            <div id='optionList' style={OptionListStyle}>
+                <button style={OptionButton} onClick={exportProjectFile}>Export Project File</button>
+                <button style={OptionButton} onClick={importProjectFile}>Import Project File</button>
+                <button style={OptionButton} onClick={clearProject}>Clear Project</button>
             </div>
         </div>
     );
