@@ -81,11 +81,12 @@ class SaveData {
     }
 
     exportProjectFile() {
-        const projectFileName = `BoardCreator-${Date.now()}.json`
         const strBoard = localStorage.getItem(BOARD_KEY)
         const strFileName = localStorage.getItem(FILE_NAME_KEY)
         const strYellowTiles = localStorage.getItem(YELLOW_TILES_KEY)
         const strGreyTIles = localStorage.getItem(GREY_TILES_KEY)
+
+        const projectFileName = `${strFileName}_${Date.now()}.boardcreator`
 
         let board
         if (strBoard)
@@ -103,7 +104,7 @@ class SaveData {
             greyTiles
         }
         const strData = JSON.stringify(data)
-        downloadFile(projectFileName, strData, 'application/json')
+        downloadFile(projectFileName, strData, 'text/plain')
     }
     importProjectFile() {
         this._selectJSONFile()
@@ -136,7 +137,7 @@ class SaveData {
         return new Promise((rs, rj) => {
             const element = document.createElement('input')
             element.type = 'file'
-            element.accept = 'application/json'
+            element.accept = '.boardcreator'
             element.onchange = () => {
                 console.log('files : ', element.files)
                 if (element.files) {
