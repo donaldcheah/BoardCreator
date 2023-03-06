@@ -7,18 +7,14 @@ import {
   RouterProvider,
 } from "react-router-dom";
 
-import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
-import BoardCreator2 from './BoardCreator2';
+
+import BoardCreator3 from './BoardCreator3';
 
 const router = createBrowserRouter([
   {
     path: "/BoardCreator",
-    element: <BoardCreator2 />,
-  },
-  {
-    path: "/BoardCreator/Old",
-    element: <App />
+    element: <BoardCreator3 />,
   }
 ]);
 

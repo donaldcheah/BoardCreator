@@ -1,33 +1,10 @@
 import { Tile, downloadFile } from "../common"
 
-/*
-{
-    board:{
-        width:number,
-        height:number,
-        tileSize:number
-    },
-    fileName:String,
-    yellowTiles:[
-        {
-            index:number,
-            x:number,
-            y:number
-        }
-    ],
-    greyTiles:[
-        {
-            index:number,
-            x:number,
-            y:number
-        }
-    ]
-}
-*/
 const BOARD_KEY = "BOARD"
 const FILE_NAME_KEY = "FILE_NAME"
-const YELLOW_TILES_KEY = "YELLOW_TILES"
-const GREY_TILES_KEY = "GREY_TILES"
+const BOARD_TILES_KEY = "BOARD_TILES"
+const COLOR_TILES_KEY = "COLOR_TILES"
+
 type BoardData = {
     width: number
     height: number
@@ -54,12 +31,12 @@ class SaveData {
         return localStorage.getItem(FILE_NAME_KEY)
     }
 
-    saveYellowTiles(tiles: Tile[]) {
+    saveColorTiles(tiles: Tile[]) {
         const str = JSON.stringify(tiles)
-        localStorage.setItem(YELLOW_TILES_KEY, str)
+        localStorage.setItem(COLOR_TILES_KEY, str)
     }
-    loadYellowTiles(): Tile[] | undefined {
-        const str = localStorage.getItem(YELLOW_TILES_KEY)
+    loadColorTiles(): Tile[] | undefined {
+        const str = localStorage.getItem(COLOR_TILES_KEY)
         let tiles: Tile[] | undefined
         if (str) {
             tiles = JSON.parse(str)
@@ -67,41 +44,43 @@ class SaveData {
         return tiles
     }
 
-    saveGreyTiles(tiles: Tile[]) {
+    saveBoardTiles(tiles: Tile[]) {
         const str = JSON.stringify(tiles)
-        localStorage.setItem(GREY_TILES_KEY, str)
+        localStorage.setItem(BOARD_TILES_KEY, str)
     }
-    loadGreyTiles(): Tile[] | undefined {
-        const str = localStorage.getItem(GREY_TILES_KEY)
+    loadBoardTiles(): Tile[] | undefined {
+        const str = localStorage.getItem(BOARD_TILES_KEY)
         let tiles: Tile[] | undefined
         if (str) {
             tiles = JSON.parse(str)
         }
         return tiles
     }
+
+
 
     exportProjectFile() {
         const strBoard = localStorage.getItem(BOARD_KEY)
         const strFileName = localStorage.getItem(FILE_NAME_KEY)
-        const strYellowTiles = localStorage.getItem(YELLOW_TILES_KEY)
-        const strGreyTIles = localStorage.getItem(GREY_TILES_KEY)
+        const strColorTiles = localStorage.getItem(COLOR_TILES_KEY)
+        const strBoardTiles = localStorage.getItem(BOARD_TILES_KEY)
 
         const projectFileName = `${strFileName}_${Date.now()}.boardcreator`
 
         let board
         if (strBoard)
             board = JSON.parse(strBoard)
-        let yellowTiles
-        if (strYellowTiles)
-            yellowTiles = JSON.parse(strYellowTiles)
-        let greyTiles
-        if (strGreyTIles)
-            greyTiles = JSON.parse(strGreyTIles)
+        let colorTiles
+        if (strColorTiles)
+            colorTiles = JSON.parse(strColorTiles)
+        let boardTiles
+        if (strBoardTiles)
+            boardTiles = JSON.parse(strBoardTiles)
         const data = {
             board,
             fileName: strFileName,
-            yellowTiles,
-            greyTiles
+            colorTiles,
+            boardTiles
         }
         const strData = JSON.stringify(data)
         downloadFile(projectFileName, strData, 'text/plain')
@@ -112,13 +91,13 @@ class SaveData {
             .then(str => {
                 console.log('loaded string from .json file :', str)
                 const obj = JSON.parse(str)
-                if (!obj.board || !obj.fileName || !obj.yellowTiles || !obj.greyTiles) {
+                if (!obj.board || !obj.fileName || !obj.colorTiles || !obj.boardTiles) {
                     throw new Error("Invalid json content!")
                 }
                 this.saveBoard(obj.board)
                 this.saveFileName(obj.fileName)
-                this.saveYellowTiles(obj.yellowTiles)
-                this.saveGreyTiles(obj.greyTiles)
+                this.saveColorTiles(obj.colorTiles)
+                this.saveBoardTiles(obj.boardTiles)
                 alert('imported project file, reloading...')
                 window.location.reload()
             }).catch(err => {
@@ -126,11 +105,12 @@ class SaveData {
                 alert(msg)
             })
     }
+
     clearSave() {
         localStorage.removeItem(BOARD_KEY)
         localStorage.removeItem(FILE_NAME_KEY)
-        localStorage.removeItem(YELLOW_TILES_KEY)
-        localStorage.removeItem(GREY_TILES_KEY)
+        localStorage.removeItem(BOARD_TILES_KEY)
+        localStorage.removeItem(COLOR_TILES_KEY)
     }
 
     private _selectJSONFile(): Promise<File> {
