@@ -139,8 +139,6 @@ export default function BoardCreator3() {
             })
             if (foundTile && foundTile.color) {
                 setCurrentTileGroupColor(foundTile.color)
-            } else {
-                setCurrentTileGroupColor(DEFAULT.currentTileGroupColor)
             }
         }
     }, [currentTileGroupIndex, setCurrentTileGroupIndex, setCurrentTileGroupColor, selectedColorTiles])
@@ -152,8 +150,6 @@ export default function BoardCreator3() {
         })
         if (foundTile && foundTile.color) {
             setCurrentTileGroupColor(foundTile.color)
-        } else {
-            setCurrentTileGroupColor(DEFAULT.currentTileGroupColor)
         }
     }, [currentTileGroupIndex, setCurrentTileGroupIndex, setCurrentTileGroupColor, selectedColorTiles])
 
