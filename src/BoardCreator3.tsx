@@ -187,7 +187,7 @@ export default function BoardCreator3() {
     const onColorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const targetColor = e.target.value
         setCurrentTileGroupColor(targetColor)
-    }, [setCurrentTileGroupColor, setSelectedColorTiles, selectedColorTiles, currentTileGroupIndex])
+    }, [setCurrentTileGroupColor])
 
     const onFileNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setFileName(e.target.value)
@@ -276,14 +276,37 @@ export default function BoardCreator3() {
         if (tileType === TILE_TYPE.BOARD)
             return null
 
-        return <div>
+        const tiles = selectedColorTiles.filter((tile) => {
+            return tile.index === currentTileGroupIndex
+        })
+        let colors: string[] = []
+        colors = tiles.reduce((acc, tile) => {
+            if (!acc.includes(tile.color as string)) {
+                acc.push(tile.color as string)
+            }
+            return acc
+        }, colors)
+        const renderColorPalette = () => {
+            return colors.map(clr => {
+                return <div key={clr} style={{ marginLeft: '8px', width: '30px', height: '30px', backgroundColor: clr }}
+                    onClick={() => {
+                        setCurrentTileGroupColor(clr)
+                    }}
+                ></div>
+            })
+        }
+
+        return <div style={{ display: 'flex', alignItems: 'center' }}>
             <p>
                 Tile Group {currentTileGroupIndex} <button onClick={prevTileGroupIndex}>{"<"}</button>
                 <button onClick={nextTileGroupIndex}>{">"}</button>
                 <input type="color" value={currentTileGroupColor} onChange={onColorChange} />
             </p>
+            <div id="colorPalette" style={{ display: 'flex' }}>
+                {renderColorPalette()}
+            </div>
         </div>
-    }, [tileType, currentTileGroupIndex, prevTileGroupIndex, nextTileGroupIndex, onColorChange, currentTileGroupColor])
+    }, [tileType, currentTileGroupIndex, prevTileGroupIndex, nextTileGroupIndex, onColorChange, currentTileGroupColor, setCurrentTileGroupColor, selectedColorTiles])
 
 
 
@@ -387,7 +410,6 @@ export default function BoardCreator3() {
             let lowestY = -1
             let maxX = -1
             let maxY = -1
-            let color: string | undefined
             targetTiles.forEach(tile => {
                 if (lowestX === -1 || tile.x < lowestX)
                     lowestX = tile.x
@@ -397,7 +419,6 @@ export default function BoardCreator3() {
                     maxX = tile.x
                 if (tile.y > maxY)
                     maxY = tile.y
-                color = tile.color
             })
             if (lowestX !== 0) {
                 targetTiles.forEach(tile => {
