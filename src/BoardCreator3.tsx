@@ -12,7 +12,12 @@ interface Tile {
 }
 
 type TileMap = { [key: number]: Tile[] }
-type OutputType = { board: { position: { xIndex: number, yIndex: number }, form: number[][] }, tileGroups: { form: number[][], color: string | undefined }[] }
+type OutputType = {
+    board: {
+        position: { xIndex: number, yIndex: number }, form: (number | string)[][]
+    },
+    tileGroups: { form: (number | string)[][] }[]
+}
 
 enum TILE_TYPE {
     BOARD = "Board",
@@ -182,14 +187,6 @@ export default function BoardCreator3() {
     const onColorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const targetColor = e.target.value
         setCurrentTileGroupColor(targetColor)
-        const tiles = selectedColorTiles.map(t => {
-            if (t.index === currentTileGroupIndex) {
-                t.color = targetColor
-            }
-            return t
-        })
-        setSelectedColorTiles([...tiles])
-
     }, [setCurrentTileGroupColor, setSelectedColorTiles, selectedColorTiles, currentTileGroupIndex])
 
     const onFileNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -378,6 +375,7 @@ export default function BoardCreator3() {
         tileMap = selectedBoardTiles.reduce<TileMap>(tileMapReducer, tileMap)
         tileMap = selectedColorTiles.reduce<TileMap>(tileMapReducer, tileMap)
 
+        //2- normalise the number of form to 0,1
         const allForms = Object.keys(tileMap).map((key) => {
             //clones the tiles from the map so not to affect the tiles on screen
             const targetTiles = tileMap[Number(key)].map((t) => {
@@ -413,16 +411,21 @@ export default function BoardCreator3() {
                 })
                 maxY -= lowestY
             }
-            const form: number[][] = []
+            //3- create the form in 2D array of 0's and 1's
+            const form: (number | string)[][] = []
             for (let ty = 0; ty <= maxY; ty++) {
-                const row: number[] = []
+                const row: (number | string)[] = []
                 for (let tx = 0; tx <= maxX; tx++) {
                     const foundTile = targetTiles.find((tile) => {
                         return tile.x === tx && tile.y === ty
                     })
-                    if (foundTile)
-                        row.push(1)
-                    else
+                    if (foundTile) {
+                        if (foundTile.index === -1) {
+                            row.push(1)
+                        } else {
+                            row.push(foundTile.color as string)
+                        }
+                    } else
                         row.push(0)
                 }
                 form.push(row)
@@ -432,7 +435,7 @@ export default function BoardCreator3() {
                 //it is the grey board type
                 return { form: form, position: { x: lowestX, y: lowestY } }
             }
-            return { form: form, color }
+            return { form: form }
         })
 
         let outputObject: OutputType = {
