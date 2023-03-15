@@ -10,11 +10,16 @@ import {
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 import BoardCreator3 from './BoardCreator3';
+import ColorBox from './components/ColorBox';
 
 const router = createBrowserRouter([
   {
     path: "/BoardCreator",
     element: <BoardCreator3 />,
+  },
+  {
+    path: "/BoardCreator/ColorBox",
+    element: <ColorBox />
   }
 ]);
 

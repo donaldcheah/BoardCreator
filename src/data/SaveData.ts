@@ -1,4 +1,5 @@
 import { Tile, downloadFile } from "../common"
+import { colorBoxData } from "./ColorBoxData"
 
 const BOARD_KEY = "BOARD"
 const FILE_NAME_KEY = "FILE_NAME"
@@ -80,7 +81,8 @@ class SaveData {
             board,
             fileName: strFileName,
             colorTiles,
-            boardTiles
+            boardTiles,
+            colorBox: JSON.stringify(colorBoxData.getColorsInBox())
         }
         const strData = JSON.stringify(data)
         downloadFile(projectFileName, strData, 'text/plain')
@@ -98,6 +100,10 @@ class SaveData {
                 this.saveFileName(obj.fileName)
                 this.saveColorTiles(obj.colorTiles)
                 this.saveBoardTiles(obj.boardTiles)
+                const colorBoxStr = obj.colorBox
+                if (colorBoxStr) {
+                    colorBoxData.setColorsInBox(JSON.parse(colorBoxStr))
+                }
                 alert('imported project file, reloading...')
                 window.location.reload()
             }).catch(err => {
@@ -111,6 +117,7 @@ class SaveData {
         localStorage.removeItem(FILE_NAME_KEY)
         localStorage.removeItem(BOARD_TILES_KEY)
         localStorage.removeItem(COLOR_TILES_KEY)
+        colorBoxData.clearData()
     }
 
     private _selectJSONFile(): Promise<File> {

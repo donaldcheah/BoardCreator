@@ -3,6 +3,9 @@ import { downloadFile } from './common'
 
 import { saveData } from './data/SaveData'
 import Package from '../package.json'
+import { useNavigate } from 'react-router-dom'
+
+import { colorBoxData } from "./data/ColorBoxData"
 
 interface Tile {
     index: number //-1 for board, others for Coloured
@@ -85,6 +88,7 @@ const DEFAULT = {
 }
 
 export default function BoardCreator3() {
+    const navigate = useNavigate()
 
     const [tileSize, setTileSize] = useState(DEFAULT.tileSize)
     const [xBoardSize, setXBoardSize] = useState(DEFAULT.xBoardSize)
@@ -96,6 +100,8 @@ export default function BoardCreator3() {
 
     const [selectedBoardTiles, setSelectedBoardTiles] = useState<Tile[]>(DEFAULT.selectedBoardTiles)
     const [selectedColorTiles, setSelectedColorTiles] = useState<Tile[]>(DEFAULT.selectedColorTiles)
+
+    const [colorList, setColorList] = useState<string[]>(colorBoxData.getColorsInBox())
 
 
     useEffect(() => {
@@ -308,6 +314,29 @@ export default function BoardCreator3() {
         </div>
     }, [tileType, currentTileGroupIndex, prevTileGroupIndex, nextTileGroupIndex, onColorChange, currentTileGroupColor, setCurrentTileGroupColor, selectedColorTiles])
 
+    const renderColorBox = useCallback(() => {
+        if (tileType === TILE_TYPE.BOARD)
+            return null
+        return <div id='colorBox' style={{
+            display: 'flex',
+            alignItems: 'center'
+        }}>
+            <p>Color Box : <button onClick={() => navigate('ColorBox')}>Add/Remove</button></p>
+            {(() => {
+                return colorList.map(colorCode => {
+                    return <div key={colorCode} title={colorCode} style={{
+                        width: '32px',
+                        height: '32px',
+                        marginLeft: '8px',
+                        cursor: 'pointer',
+                        backgroundColor: colorCode
+                    }} onClick={() => {
+                        setCurrentTileGroupColor(colorCode)
+                    }}></div>
+                })
+            })()}
+        </div>
+    }, [tileType, colorList, setCurrentTileGroupColor, navigate])
 
 
     const renderBoard = useCallback(() => {
@@ -527,6 +556,7 @@ export default function BoardCreator3() {
             setSelectedBoardTiles(selectedBoardTiles)
             setTileType(tileType)
             setFileName(fileName)
+            setColorList([])
         }
     }, [])
     return <div>
@@ -546,6 +576,7 @@ export default function BoardCreator3() {
                 </select>
             </p>
             {renderColourDisplay()}
+            {renderColorBox()}
             {/* {renderTileGroupView()} */}
 
         </div>
