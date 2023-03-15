@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/BoardCreator/static/css/main.e6c13ad2.css",
-    "main.js": "/BoardCreator/static/js/main.04a9df52.js",
+    "main.js": "/BoardCreator/static/js/main.d0451137.js",
     "service-worker.js": "/BoardCreator/service-worker.js",
     "index.html": "/BoardCreator/index.html",
     "main.e6c13ad2.css.map": "/BoardCreator/static/css/main.e6c13ad2.css.map",
-    "main.04a9df52.js.map": "/BoardCreator/static/js/main.04a9df52.js.map"
+    "main.d0451137.js.map": "/BoardCreator/static/js/main.d0451137.js.map"
   },
   "entrypoints": [
     "static/css/main.e6c13ad2.css",
-    "static/js/main.04a9df52.js"
+    "static/js/main.d0451137.js"
   ]
 }
